@@ -1,0 +1,968 @@
+# StopWake: сборка APK для Android.
+# Запускается сам, когда вы загружаете новый index.html, или вручную: Actions → Build APK → Run workflow.
+# Готовый файл появится в разделе Releases (справа на главной странице репозитория).
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    paths: ['index.html', '.github/workflows/build-apk.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Create Android project
+        env:
+          ICON_XXXH: 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
+          ICON_XH: iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAwFBMVEUKFjAPJU91rPt8tP4aQYcAAAAUNXEMHkEWPIFIc7iAuf8QLWQxXKQxV5ZbitEDDCNJeMILFS8AAFUJFTAJFS9nmuQJFjBFba0HBzQJFTAlPGVklNoRID0qRXI6ZaxfkNsAAH8MGS4YMFwBCR5BZJgtToRXgL4AJCQiN1s7Yp6Gwf8zUH4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB9Zz/xAAAAQHRSTlP+/////wD//////////////y4D07P/jf8Ldf///////wIN//////8H/////wAAAAAAAAAAAAAAAAAAAAAAAAAAbUwqJgAABEZJREFUeNrFmumamjAUhk8SiRAmQRTG3Y5LpzPt/d9fT8KuwYWE9vvhM2r7vZ4lCwEIGs2D4Ji+ZwsYrEW2TufGqBa07dN3B/Ma8p62EQ0A7cGTNOIW4GSfJN336zoIKNOzypx+82ZDupBsVRKg8E/dkr+jjOaRJC3GIi0IGvARpI5J31FKGRP0c9OKoiCYCI6uzbNjgjEDiXY1YnGsU5Q59428qC3TDEGbIDIdAuDL2r0xE8z+6UIFwyDkuemleQDuBWgguwsWmzKZNGX4gJWHBJUhAJzJVhP2SZ2kFfgJQH3KL0DbBJDAKGlCgMDHBLGjQjBVlFcTVD1pBHAELwCdGbbUMRD8W/ypknQELxna5TgQsEcj9D3vBWXbOkfgaQolUpdX6BggxyRVo+EdMl9NCpGgxjjZIyAqARkswJeSqCovliOv5gvwKZ0b7NDkE7NFXv/v05as/+AshRnG54toDbanzUlHVsgXNqgqiyCTV9yJTRZETikWIdkI9vtyBmcCMm4GxM68bjb7p2tQeZ1OvKWTcZ+SnmokybMJ2kcYdY/UhUAf4dlfH7F7ElSCJU0v+G8FvStcvaYuhJkwJszubT5mewfC3uwTqMotBPOxnqKVtZmeU2QM+HRpSRRTMf/WiwDdDCYQPbNQTsjSFoHinJhfIMlQgl6ZMAPo89vSQDkOBmlWADKUUAFiGVWalcI/D64AnB1KAOdxzK1qA14mkBJQeofhpKuwAkQkHgLQs1sX0EXo9xWADwnhChDeRDAJJ/ytBAwIQfufDKDPH2UALIpLwEsEDeAa8KPfvwEMCKEDsNs7AcwCxq+LfC1T5BbgBUIDyKWUb32KKsDLIRjAz+Ki656oO+Ch/gGADwVIkwHxMEWDAXtdZFrPoBYp5gTotCnvb1M3wI/eYYaz0ZsXQD/BHyC8C4idAQ9S5AxAWcwxLF8AOXu7IYRydgivZ9NXp1MD2MYHHFAHfu2PV/bKy3qgzCuddAsRmiEmpRugXDLNjHMNyDuAAUtmvehv45lgYnY1GMKD2dsVgEGLfntXEW2jm20LP2zVxGnbUm288mbJ7K7H+BE/FDu7QRsvfX1XVJLwXuXN7nrA5pTAtz7coJGs1F6O8e3B+FM+dHdd7H7pg/Vm8N7XhPCTPVo1hRrurwnyPoHhaHbw14SNOaVkopJeovFFmAM0RpfEyV8TlFmXl6ioo6W5gHP1h2kBIJazEMXqDnI6TDA+J+PTuY4qAO7+oFqZuI3AfmjkEzB19Qcl7DWYFl94OPTGds8JWADFFx5OdFG2Q0FSfuFT04fnmv9Hi7Hts3EBGazHBawhHReQwq9Ri7D45ecmUX+GAghGzVEa+LpR19NDwcrjrUZrAB+ebpb2VWCub/fOx0oSJsjXDWt7i66qG9bzUcpQ+Ht6aMDu/+HxsYfb/Jf+1YMb88BvL63/x6MnK18Pz6z7Hp4Z5/Gfv+m5T+olRMmWAAAAAElFTkSuQmCC
+          KEYSTORE: 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
+        run: |
+          set -e
+          mkdir -p android/app/src/main/java/ru/stopwake/app android/app/src/main/assets android/app/src/main/res/mipmap-xxxhdpi android/app/src/main/res/mipmap-xhdpi
+          cd android
+          cat > settings.gradle <<'SWEOF'
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = 'StopWake'
+          include ':app'
+          SWEOF
+          cat > build.gradle <<'SWEOF'
+          plugins {
+              id 'com.android.application' version '8.5.2' apply false
+          }
+          SWEOF
+          cat > gradle.properties <<'SWEOF'
+          org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
+          android.useAndroidX=false
+          SWEOF
+          cat > app/build.gradle <<'SWEOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          def run = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int
+
+          android {
+              namespace 'ru.stopwake.app'
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId 'ru.stopwake.app'
+                  minSdk 26
+                  targetSdk 34
+                  versionCode run
+                  versionName "1.0.${run}"
+              }
+
+              signingConfigs {
+                  stopwake {
+                      storeFile file('stopwake.jks')
+                      storePassword 'stopwake'
+                      keyAlias 'stopwake'
+                      keyPassword 'stopwake'
+                      storeType 'pkcs12'
+                  }
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      signingConfig signingConfigs.stopwake
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+
+              lint {
+                  abortOnError false
+                  checkReleaseBuilds false
+              }
+          }
+          SWEOF
+          cat > app/src/main/AndroidManifest.xml <<'SWEOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+              <uses-permission android:name="android.permission.VIBRATE" />
+              <uses-permission android:name="android.permission.WAKE_LOCK" />
+              <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+              <application
+                  android:label="StopWake"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher"
+                  android:allowBackup="true"
+                  android:hardwareAccelerated="true"
+                  android:supportsRtl="true"
+                  android:theme="@android:style/Theme.Material.NoActionBar">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:launchMode="singleTask"
+                      android:screenOrientation="portrait"
+                      android:windowSoftInputMode="adjustResize"
+                      android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|uiMode|density">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+                  <service
+                      android:name=".TripService"
+                      android:exported="false"
+                      android:foregroundServiceType="location" />
+              </application>
+          </manifest>
+          SWEOF
+          cat > app/src/main/java/ru/stopwake/app/MainActivity.java <<'SWEOF'
+          package ru.stopwake.app;
+
+          import android.Manifest;
+          import android.app.Activity;
+          import android.content.Intent;
+          import android.content.pm.PackageManager;
+          import android.graphics.drawable.ColorDrawable;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.Bundle;
+          import android.view.View;
+          import android.view.WindowManager;
+          import android.webkit.GeolocationPermissions;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
+          import java.io.ByteArrayOutputStream;
+          import java.io.InputStream;
+          import java.util.ArrayList;
+          import java.util.List;
+
+          public class MainActivity extends Activity {
+              static MainActivity live;
+              WebView web;
+              GeolocationPermissions.Callback pendingGeo;
+              String pendingOrigin;
+              boolean pageReady = false;
+              boolean pendingAlarm = false;
+
+              @Override
+              protected void onCreate(Bundle state) {
+                  super.onCreate(state);
+                  live = this;
+                  getWindow().setBackgroundDrawable(new ColorDrawable(0xFF060C1B));
+                  getWindow().setStatusBarColor(0xFF060C1B);
+                  getWindow().setNavigationBarColor(0xFF081124);
+                  getWindow().getDecorView().setSystemUiVisibility(0);
+
+                  web = new WebView(this);
+                  web.setBackgroundColor(0xFF060C1B);
+                  web.setOverScrollMode(View.OVER_SCROLL_NEVER);
+                  setContentView(web);
+
+                  WebSettings s = web.getSettings();
+                  s.setJavaScriptEnabled(true);
+                  s.setDomStorageEnabled(true);
+                  s.setDatabaseEnabled(true);
+                  s.setGeolocationEnabled(true);
+                  s.setMediaPlaybackRequiresUserGesture(false);
+                  s.setTextZoom(100);
+                  s.setCacheMode(WebSettings.LOAD_DEFAULT);
+
+                  web.addJavascriptInterface(new Bridge(this), "Android");
+                  web.setWebChromeClient(new WebChromeClient() {
+                      @Override
+                      public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback cb) {
+                          if (hasLocation()) {
+                              cb.invoke(origin, true, true);
+                          } else {
+                              pendingGeo = cb;
+                              pendingOrigin = origin;
+                              askPermissions();
+                          }
+                      }
+                  });
+                  web.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
+                          Uri u = req.getUrl();
+                          if ("stopwake.app".equals(u.getHost())) return false;
+                          try {
+                              startActivity(new Intent(Intent.ACTION_VIEW, u));
+                          } catch (Exception ignored) {
+                          }
+                          return true;
+                      }
+
+                      @Override
+                      public void onPageFinished(WebView view, String url) {
+                          pageReady = true;
+                          if (pendingAlarm) {
+                              pendingAlarm = false;
+                              js("window.swNativeAlarm&&swNativeAlarm()");
+                          }
+                      }
+                  });
+                  web.loadDataWithBaseURL("https://stopwake.app/", readAsset("index.html"), "text/html", "utf-8", null);
+
+                  askPermissions();
+                  handleIntent(getIntent());
+              }
+
+              @Override
+              protected void onNewIntent(Intent intent) {
+                  super.onNewIntent(intent);
+                  setIntent(intent);
+                  handleIntent(intent);
+              }
+
+              void handleIntent(Intent intent) {
+                  if (intent == null || !intent.getBooleanExtra("alarm", false)) return;
+                  if (Build.VERSION.SDK_INT >= 27) {
+                      setShowWhenLocked(true);
+                      setTurnScreenOn(true);
+                  } else {
+                      getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+                  }
+                  getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                  if (pageReady) js("window.swNativeAlarm&&swNativeAlarm()");
+                  else pendingAlarm = true;
+              }
+
+              void clearLockFlags() {
+                  if (Build.VERSION.SDK_INT >= 27) {
+                      setShowWhenLocked(false);
+                      setTurnScreenOn(false);
+                  } else {
+                      getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+                  }
+                  getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+              }
+
+              void js(final String code) {
+                  if (web == null) return;
+                  web.post(new Runnable() {
+                      @Override
+                      public void run() {
+                          web.evaluateJavascript(code, null);
+                      }
+                  });
+              }
+
+              boolean hasLocation() {
+                  return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                          || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+              }
+
+              void askPermissions() {
+                  List<String> need = new ArrayList<>();
+                  if (!hasLocation()) {
+                      need.add(Manifest.permission.ACCESS_FINE_LOCATION);
+                      need.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+                  }
+                  if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {
+                      need.add("android.permission.POST_NOTIFICATIONS");
+                  }
+                  if (!need.isEmpty()) requestPermissions(need.toArray(new String[0]), 1);
+              }
+
+              @Override
+              public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
+                  super.onRequestPermissionsResult(code, perms, results);
+                  if (pendingGeo != null) {
+                      pendingGeo.invoke(pendingOrigin, hasLocation(), true);
+                      pendingGeo = null;
+                  }
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (web == null) {
+                      super.onBackPressed();
+                      return;
+                  }
+                  web.evaluateJavascript("window.swBack?String(swBack()):'false'", new android.webkit.ValueCallback<String>() {
+                      @Override
+                      public void onReceiveValue(String v) {
+                          if (v == null || !v.contains("true")) moveTaskToBack(true);
+                      }
+                  });
+              }
+
+              @Override
+              protected void onDestroy() {
+                  if (live == this) live = null;
+                  super.onDestroy();
+              }
+
+              String readAsset(String name) {
+                  try (InputStream in = getAssets().open(name)) {
+                      ByteArrayOutputStream out = new ByteArrayOutputStream();
+                      byte[] buf = new byte[16384];
+                      int n;
+                      while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                      return out.toString("UTF-8");
+                  } catch (Exception e) {
+                      return "<h1 style='color:#fff'>index.html not found</h1>";
+                  }
+              }
+          }
+          SWEOF
+          cat > app/src/main/java/ru/stopwake/app/Bridge.java <<'SWEOF'
+          package ru.stopwake.app;
+
+          import android.content.Context;
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.PowerManager;
+          import android.provider.Settings;
+          import android.webkit.JavascriptInterface;
+
+          public class Bridge {
+              final Context ctx;
+              final MainActivity act;
+
+              Bridge(MainActivity a) {
+                  act = a;
+                  ctx = a.getApplicationContext();
+              }
+
+              @JavascriptInterface
+              public void startTrip(String json) {
+                  Intent i = new Intent(ctx, TripService.class).setAction(TripService.ACT_START).putExtra("json", json);
+                  if (Build.VERSION.SDK_INT >= 26) ctx.startForegroundService(i);
+                  else ctx.startService(i);
+              }
+
+              @JavascriptInterface
+              public void stopTrip() {
+                  ctx.stopService(new Intent(ctx, TripService.class));
+                  act.runOnUiThread(new Runnable() {
+                      @Override
+                      public void run() {
+                          act.clearLockFlags();
+                      }
+                  });
+              }
+
+              @JavascriptInterface
+              public void stopAlarm() {
+                  TripService.silenceStatic();
+                  act.runOnUiThread(new Runnable() {
+                      @Override
+                      public void run() {
+                          act.clearLockFlags();
+                      }
+                  });
+              }
+
+              @JavascriptInterface
+              public String trip() {
+                  return TripService.active ? TripService.tripJson : "";
+              }
+
+              @JavascriptInterface
+              public boolean alarming() {
+                  return TripService.alarming;
+              }
+
+              @JavascriptInterface
+              public boolean isNative() {
+                  return true;
+              }
+
+              @JavascriptInterface
+              public void batteryOpt() {
+                  try {
+                      PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
+                      if (pm != null && !pm.isIgnoringBatteryOptimizations(ctx.getPackageName())) {
+                          Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + ctx.getPackageName()));
+                          act.startActivity(i);
+                      }
+                  } catch (Exception ignored) {
+                  }
+              }
+
+              @JavascriptInterface
+              public void testAlarm() {
+                  TripService.testSound(ctx);
+              }
+          }
+          SWEOF
+          cat > app/src/main/java/ru/stopwake/app/TripService.java <<'SWEOF'
+          package ru.stopwake.app;
+
+          import android.app.Notification;
+          import android.app.NotificationChannel;
+          import android.app.NotificationManager;
+          import android.app.PendingIntent;
+          import android.app.Service;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.location.Location;
+          import android.location.LocationListener;
+          import android.location.LocationManager;
+          import android.media.AudioAttributes;
+          import android.media.MediaPlayer;
+          import android.media.Ringtone;
+          import android.media.RingtoneManager;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.Bundle;
+          import android.os.Handler;
+          import android.os.IBinder;
+          import android.os.Looper;
+          import android.os.PowerManager;
+          import android.os.SystemClock;
+          import android.os.VibrationEffect;
+          import android.os.Vibrator;
+
+          import org.json.JSONArray;
+          import org.json.JSONObject;
+
+          import java.util.Locale;
+
+          public class TripService extends Service implements LocationListener {
+              static final String ACT_START = "ru.stopwake.START";
+              static final String ACT_SILENCE = "ru.stopwake.SILENCE";
+              static final String ACT_OUT = "ru.stopwake.OUT";
+              static final String CH_TRACK = "sw_track", CH_ALERT = "sw_alert", CH_ALARM = "sw_alarm";
+              static final int N_TRACK = 1, N_ALERT = 2, N_ALARM = 3;
+
+              static volatile boolean active = false, alarming = false;
+              static volatile String tripJson = "";
+              static TripService inst;
+              static final Handler main = new Handler(Looper.getMainLooper());
+
+              double dLat, dLon;
+              String name = "";
+              final double[] th = new double[]{300, 200, 100};
+              boolean byTime = false, sound = true, vib = true, smart = true;
+              float vol = 0.8f;
+              int stage = 0;
+
+              LocationManager lm;
+              MediaPlayer mp;
+              Vibrator vb;
+              PowerManager.WakeLock wl;
+              Location prev;
+              double lastDist = -1, speed = 0;
+              long lastFix = 0, lastNotif = 0, alarmStart = 0;
+              int band = -1;
+
+              final Runnable watchdog = new Runnable() {
+                  @Override
+                  public void run() {
+                      if (!active) return;
+                      long now = SystemClock.elapsedRealtime();
+                      if (lastDist >= 0 && now - lastFix > 25000 && speed > 1) {
+                          double est = Math.max(0, lastDist - speed * (now - lastFix) / 1000.0);
+                          evaluate(est, true);
+                      }
+                      main.postDelayed(this, 5000);
+                  }
+              };
+
+              final Runnable ramp = new Runnable() {
+                  @Override
+                  public void run() {
+                      if (mp == null || !alarming) return;
+                      float f = smart ? Math.min(1f, 0.35f + (SystemClock.elapsedRealtime() - alarmStart) / 20000f * 0.65f) : 1f;
+                      float v = Math.max(0.15f, vol) * f;
+                      try {
+                          mp.setVolume(v, v);
+                      } catch (Exception ignored) {
+                      }
+                      if (f < 1f) main.postDelayed(this, 1000);
+                  }
+              };
+
+              @Override
+              public IBinder onBind(Intent intent) {
+                  return null;
+              }
+
+              @Override
+              public void onCreate() {
+                  super.onCreate();
+                  inst = this;
+                  lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                  vb = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                  channels(this);
+              }
+
+              @Override
+              public int onStartCommand(Intent intent, int flags, int startId) {
+                  String act = intent == null ? null : intent.getAction();
+                  if (ACT_SILENCE.equals(act)) {
+                      silenceNow();
+                      return START_STICKY;
+                  }
+                  if (ACT_OUT.equals(act)) {
+                      MainActivity a = MainActivity.live;
+                      if (a != null) a.js("window.swNativeOut&&swNativeOut()");
+                      stopSelf();
+                      return START_NOT_STICKY;
+                  }
+                  String json = intent == null ? null : intent.getStringExtra("json");
+                  if (json == null && tripJson.length() > 0) json = tripJson;
+                  if (json == null) {
+                      stopSelf();
+                      return START_NOT_STICKY;
+                  }
+                  try {
+                      JSONObject o = new JSONObject(json);
+                      dLat = o.getDouble("lat");
+                      dLon = o.getDouble("lon");
+                      name = o.optString("name", "остановка");
+                      byTime = "t".equals(o.optString("kind", "d"));
+                      JSONArray a = o.optJSONArray("th");
+                      if (a != null) for (int k = 0; k < 3 && k < a.length(); k++) th[k] = a.getDouble(k);
+                      sound = o.optBoolean("sound", true);
+                      vib = o.optBoolean("vib", true);
+                      smart = o.optBoolean("smart", true);
+                      vol = (float) o.optDouble("vol", 0.8);
+                  } catch (Exception e) {
+                      stopSelf();
+                      return START_NOT_STICKY;
+                  }
+                  tripJson = json;
+                  try {
+                      startForeground(N_TRACK, trackNotif("До «" + name + "»", "Ищем GPS…"));
+                  } catch (Exception e) {
+                      stopSelf();
+                      return START_NOT_STICKY;
+                  }
+                  active = true;
+                  stage = 0;
+                  lastDist = -1;
+                  speed = 0;
+                  prev = null;
+                  band = -1;
+                  stopSound();
+                  cancel(N_ALERT);
+                  cancel(N_ALARM);
+                  if (wl == null) {
+                      PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                      wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "stopwake:trip");
+                      wl.setReferenceCounted(false);
+                  }
+                  wl.acquire(4 * 3600 * 1000L);
+                  requestUpdates(0);
+                  main.removeCallbacks(watchdog);
+                  main.postDelayed(watchdog, 5000);
+                  return START_REDELIVER_INTENT;
+              }
+
+              void requestUpdates(int b) {
+                  band = b;
+                  long ms = b == 0 ? 15000 : b == 1 ? 8000 : b == 2 ? 4000 : 2000;
+                  try {
+                      lm.removeUpdates(this);
+                  } catch (Exception ignored) {
+                  }
+                  try {
+                      lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, ms, 0, this, Looper.getMainLooper());
+                  } catch (Exception ignored) {
+                  }
+                  try {
+                      if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
+                          lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, ms, 0, this, Looper.getMainLooper());
+                  } catch (Exception ignored) {
+                  }
+              }
+
+              @Override
+              public void onLocationChanged(Location l) {
+                  if (!active) return;
+                  if (prev != null && "network".equals(l.getProvider()) && "gps".equals(prev.getProvider())
+                          && l.getTime() - prev.getTime() < 20000) return;
+                  float[] r = new float[1];
+                  Location.distanceBetween(l.getLatitude(), l.getLongitude(), dLat, dLon, r);
+                  double d = r[0];
+                  double s = -1;
+                  if (l.hasSpeed() && l.getSpeed() > 0.3f) s = l.getSpeed();
+                  else if (prev != null) {
+                      double dt = (l.getTime() - prev.getTime()) / 1000.0;
+                      if (dt > 0.5) s = prev.distanceTo(l) / dt;
+                  }
+                  if (s >= 0 && s < 45) speed = speed <= 0 ? s : speed * 0.7 + s * 0.3;
+                  prev = l;
+                  lastDist = d;
+                  lastFix = SystemClock.elapsedRealtime();
+                  evaluate(d, false);
+                  int nb = d > 3000 ? 0 : d > 1200 ? 1 : d > 400 ? 2 : 3;
+                  if (nb != band) requestUpdates(nb);
+              }
+
+              @Override
+              public void onStatusChanged(String provider, int status, Bundle extras) {
+              }
+
+              @Override
+              public void onProviderEnabled(String provider) {
+              }
+
+              @Override
+              public void onProviderDisabled(String provider) {
+              }
+
+              void evaluate(double d, boolean est) {
+                  double value = byTime ? d / Math.max(speed, 1.5) : d;
+                  int st = 0;
+                  for (int k = 0; k < 3; k++) if (value <= th[k]) st = k + 1;
+                  if (d < 150) st = 3;
+                  if (st > stage) {
+                      stage = st;
+                      fire(st, d);
+                  }
+                  long now = SystemClock.elapsedRealtime();
+                  if (now - lastNotif > 5000) {
+                      lastNotif = now;
+                      String eta = speed > 1 ? " · ≈ " + fmtT(d / speed) : "";
+                      notify(N_TRACK, trackNotif("До «" + name + "»: " + fmtD(d) + eta,
+                              est ? "Нет GPS, считаем по скорости" : stageText()));
+                  }
+              }
+
+              String stageText() {
+                  if (stage == 0) return "Будильник включён. Можно спать";
+                  if (stage == 1) return "Подъезжаем";
+                  if (stage == 2) return "Скоро выходить";
+                  return "Пора к выходу!";
+              }
+
+              void fire(int st, double d) {
+                  if (st == 1) {
+                      notify(N_ALERT, alertNotif("Остановка близко!", "Через " + fmtD(d) + " — " + name));
+                      vibrate(new long[]{0, 250, 120, 250}, -1);
+                  } else if (st == 2) {
+                      notify(N_ALERT, alertNotif("Скоро выходить", "«" + name + "» через " + fmtD(d) + ". Соберите вещи"));
+                      vibrate(new long[]{0, 400, 200, 400}, -1);
+                      if (sound) playOnce();
+                  } else if (st == 3) {
+                      cancel(N_ALERT);
+                      alarming = true;
+                      alarmStart = SystemClock.elapsedRealtime();
+                      notify(N_ALARM, alarmNotif(d));
+                      vibrate(new long[]{0, 800, 300, 800, 300}, 0);
+                      if (sound) startAlarmSound();
+                      MainActivity a = MainActivity.live;
+                      if (a != null) a.js("window.swNativeAlarm&&swNativeAlarm()");
+                  }
+              }
+
+              static AudioAttributes alarmAttrs() {
+                  return new AudioAttributes.Builder()
+                          .setUsage(AudioAttributes.USAGE_ALARM)
+                          .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                          .build();
+              }
+
+              static Uri alarmUri() {
+                  Uri u = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+                  if (u == null) u = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+                  if (u == null) u = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                  return u;
+              }
+
+              void playOnce() {
+                  try {
+                      Uri u = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                      if (u == null) u = alarmUri();
+                      final Ringtone r = RingtoneManager.getRingtone(this, u);
+                      if (r == null) return;
+                      r.setAudioAttributes(alarmAttrs());
+                      r.play();
+                      main.postDelayed(new Runnable() {
+                          @Override
+                          public void run() {
+                              try {
+                                  r.stop();
+                              } catch (Exception ignored) {
+                              }
+                          }
+                      }, 4000);
+                  } catch (Exception ignored) {
+                  }
+              }
+
+              void startAlarmSound() {
+                  stopSound();
+                  try {
+                      mp = new MediaPlayer();
+                      mp.setAudioAttributes(alarmAttrs());
+                      mp.setDataSource(this, alarmUri());
+                      mp.setLooping(true);
+                      mp.prepare();
+                      float v = smart ? Math.max(0.15f, vol) * 0.35f : Math.max(0.15f, vol);
+                      mp.setVolume(v, v);
+                      mp.start();
+                      main.removeCallbacks(ramp);
+                      main.postDelayed(ramp, 1000);
+                  } catch (Exception e) {
+                      stopSound();
+                      playOnce();
+                  }
+              }
+
+              void stopSound() {
+                  main.removeCallbacks(ramp);
+                  if (mp != null) {
+                      try {
+                          mp.stop();
+                      } catch (Exception ignored) {
+                      }
+                      try {
+                          mp.release();
+                      } catch (Exception ignored) {
+                      }
+                      mp = null;
+                  }
+              }
+
+              void vibrate(long[] pattern, int repeat) {
+                  if (!vib || vb == null || !vb.hasVibrator()) return;
+                  try {
+                      if (Build.VERSION.SDK_INT >= 26)
+                          vb.vibrate(VibrationEffect.createWaveform(pattern, repeat), alarmAttrs());
+                      else vb.vibrate(pattern, repeat);
+                  } catch (Exception ignored) {
+                  }
+              }
+
+              void silenceNow() {
+                  alarming = false;
+                  stopSound();
+                  try {
+                      if (vb != null) vb.cancel();
+                  } catch (Exception ignored) {
+                  }
+                  cancel(N_ALARM);
+                  lastNotif = 0;
+              }
+
+              static void silenceStatic() {
+                  main.post(new Runnable() {
+                      @Override
+                      public void run() {
+                          if (inst != null) inst.silenceNow();
+                      }
+                  });
+              }
+
+              static void testSound(final Context c) {
+                  main.post(new Runnable() {
+                      @Override
+                      public void run() {
+                          try {
+                              final Ringtone r = RingtoneManager.getRingtone(c, alarmUri());
+                              if (r == null) return;
+                              r.setAudioAttributes(alarmAttrs());
+                              r.play();
+                              main.postDelayed(new Runnable() {
+                                  @Override
+                                  public void run() {
+                                      try {
+                                          r.stop();
+                                      } catch (Exception ignored) {
+                                      }
+                                  }
+                              }, 3000);
+                          } catch (Exception ignored) {
+                          }
+                      }
+                  });
+              }
+
+              // ---------- notifications ----------
+              static void channels(Context c) {
+                  if (Build.VERSION.SDK_INT < 26) return;
+                  NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+                  NotificationChannel t = new NotificationChannel(CH_TRACK, "Поездка", NotificationManager.IMPORTANCE_LOW);
+                  t.setDescription("Расстояние до остановки во время поездки");
+                  t.setShowBadge(false);
+                  NotificationChannel a = new NotificationChannel(CH_ALERT, "Приближение к остановке", NotificationManager.IMPORTANCE_HIGH);
+                  a.setSound(null, null);
+                  a.enableVibration(false);
+                  a.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+                  NotificationChannel al = new NotificationChannel(CH_ALARM, "Будильник остановки", NotificationManager.IMPORTANCE_HIGH);
+                  al.setSound(null, null);
+                  al.enableVibration(false);
+                  al.setBypassDnd(true);
+                  al.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+                  nm.createNotificationChannel(t);
+                  nm.createNotificationChannel(a);
+                  nm.createNotificationChannel(al);
+              }
+
+              PendingIntent openApp(boolean alarm, int req) {
+                  Intent i = new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                  if (alarm) i.putExtra("alarm", true);
+                  return PendingIntent.getActivity(this, req, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+              }
+
+              PendingIntent serviceAction(String act, int req) {
+                  Intent i = new Intent(this, TripService.class).setAction(act);
+                  return PendingIntent.getService(this, req, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+              }
+
+              Notification.Builder builder(String ch) {
+                  return Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(this, ch) : new Notification.Builder(this);
+              }
+
+              Notification trackNotif(String title, String text) {
+                  return builder(CH_TRACK)
+                          .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+                          .setContentTitle(title)
+                          .setContentText(text)
+                          .setOngoing(true)
+                          .setOnlyAlertOnce(true)
+                          .setColor(0xFF2F7BFF)
+                          .setContentIntent(openApp(false, 10))
+                          .addAction(new Notification.Action.Builder((android.graphics.drawable.Icon) null, "Я вышел", serviceAction(ACT_OUT, 11)).build())
+                          .build();
+              }
+
+              Notification alertNotif(String title, String text) {
+                  return builder(CH_ALERT)
+                          .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                          .setContentTitle(title)
+                          .setContentText(text)
+                          .setCategory(Notification.CATEGORY_REMINDER)
+                          .setPriority(Notification.PRIORITY_HIGH)
+                          .setColor(0xFF2F7BFF)
+                          .setAutoCancel(true)
+                          .setContentIntent(openApp(false, 20))
+                          .build();
+              }
+
+              Notification alarmNotif(double d) {
+                  return builder(CH_ALARM)
+                          .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                          .setContentTitle("Просыпайтесь! «" + name + "»")
+                          .setContentText("Осталось " + fmtD(d) + ". Пора к выходу")
+                          .setCategory(Notification.CATEGORY_ALARM)
+                          .setPriority(Notification.PRIORITY_MAX)
+                          .setColor(0xFFFF3B4A)
+                          .setOngoing(true)
+                          .setContentIntent(openApp(true, 30))
+                          .setFullScreenIntent(openApp(true, 31), true)
+                          .addAction(new Notification.Action.Builder((android.graphics.drawable.Icon) null, "Выключить", serviceAction(ACT_SILENCE, 32)).build())
+                          .addAction(new Notification.Action.Builder((android.graphics.drawable.Icon) null, "Я вышел", serviceAction(ACT_OUT, 33)).build())
+                          .build();
+              }
+
+              void notify(int id, Notification n) {
+                  try {
+                      ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).notify(id, n);
+                  } catch (Exception ignored) {
+                  }
+              }
+
+              void cancel(int id) {
+                  try {
+                      ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancel(id);
+                  } catch (Exception ignored) {
+                  }
+              }
+
+              static String fmtD(double m) {
+                  if (m < 1000) return Math.max(0, Math.round(m / 10) * 10) + " м";
+                  return String.format(Locale.US, "%.1f", m / 1000).replace('.', ',') + " км";
+              }
+
+              static String fmtT(double s) {
+                  if (s < 60) return "<1 мин";
+                  if (s < 3600) return Math.round(s / 60) + " мин";
+                  return (int) (s / 3600) + " ч " + Math.round((s % 3600) / 60) + " мин";
+              }
+
+              @Override
+              public void onDestroy() {
+                  active = false;
+                  alarming = false;
+                  tripJson = "";
+                  main.removeCallbacks(watchdog);
+                  try {
+                      lm.removeUpdates(this);
+                  } catch (Exception ignored) {
+                  }
+                  stopSound();
+                  try {
+                      if (vb != null) vb.cancel();
+                  } catch (Exception ignored) {
+                  }
+                  try {
+                      if (wl != null && wl.isHeld()) wl.release();
+                  } catch (Exception ignored) {
+                  }
+                  cancel(N_ALERT);
+                  cancel(N_ALARM);
+                  if (Build.VERSION.SDK_INT >= 24) stopForeground(Service.STOP_FOREGROUND_REMOVE);
+                  else stopForeground(true);
+                  if (inst == this) inst = null;
+                  super.onDestroy();
+              }
+          }
+          SWEOF
+          echo "$ICON_XXXH" | base64 -d > app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          echo "$ICON_XH" | base64 -d > app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          echo "$KEYSTORE" | base64 -d > app/stopwake.jks
+          cp ../index.html app/src/main/assets/index.html
+          ls -R app/src/main | head -40
+
+      - name: Build APK
+        working-directory: android
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Collect APK
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk StopWake.apk
+          ls -la StopWake.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StopWake-apk
+          path: StopWake.apk
+
+      - name: Publish to Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete apk --yes --cleanup-tag --repo "${{ github.repository }}" || true
+          gh release create apk StopWake.apk --repo "${{ github.repository }}" --target "${{ github.sha }}" --latest \
+            --title "StopWake для Android (сборка ${{ github.run_number }})" \
+            --notes "Скачайте StopWake.apk на телефон и установите. Если Android спросит, разрешите установку из этого источника."
